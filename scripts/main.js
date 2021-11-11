@@ -1,0 +1,1 @@
+app = new Application("Beadandó");

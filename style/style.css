@@ -1,0 +1,188 @@
+.menu_plain, .game_plain{
+    width: 100%;
+    height: 100%;
+    background-color: #111111;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu_plain{
+    flex-direction: column;
+}
+
+.game_plain{
+    flex-direction: row;
+}
+
+body, html{
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+}
+
+.menu_button, .rotate_button{
+    color: rgb(214, 214, 214);
+    background-color: transparent;
+    border: 3px solid rgb(214, 214, 214);
+    font-family: 'PT Sans', sans-serif;
+    font-size: 200%;
+    border-radius: 50px 20px;
+    width: 25%;
+    height: 10%;
+    transition-duration: 1s;
+    margin: 2%;
+    text-align: center;
+}
+
+.menu_button:hover, .rotate_button:hover{
+    background-color: rgb(214, 214, 214);
+    color: #111111;
+    font-size: 220%;
+}
+
+.rotate_button{
+    width: 100%;
+    height: 50%;
+}
+
+.description p{
+    color: white;
+    font-size: small;
+}
+
+.menu_button::placeholder{
+    text-align: center;
+}
+
+.input_player_number::-webkit-inner-spin-button, .input_player_number::-webkit-outer-spin-button, .input_kincskartya_number::-webkit-inner-spin-button, .input_kincskartya_number::-webkit-outer-spin-button{
+    -moz-appearance: textfield;
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.input_player_number_subscript, .input_kincskartya_number_subscript, .overboard_subscript{
+    color: rgb(214, 214, 214);
+    font-size: 200%;
+    font-family: 'PT Sans', sans-serif;
+}
+
+.game_main{
+    height: 99%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.cell{
+    height: 100%;
+    aspect-ratio: 1 / 1;
+}
+
+.row{
+    padding: 0;
+    height: 11%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.arrow{
+    background-image: url('../assets/arrow.png');
+    background-size: cover;
+    transition-duration: 1s;
+}
+
+.arrow:hover{
+    background-image: url('../assets/arrow_full_white.png');
+}
+
+.pipe{
+    background-image: url('../assets/pipe.png');
+    background-size: cover;
+}
+
+.three_way{
+    background-image: url('../assets/three_way.png');
+    background-size: cover;
+}
+.two_way{
+    background-image: url('../assets/two_way.png');
+    background-size: cover;
+}
+
+.overboard_bottom{
+    height: 30%;
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    margin-top: 1em;
+}
+
+
+.overboard_top{
+    height: 70%;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    flex-direction: column;
+}
+
+.show_overboard_box{
+    height: 20%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.overboard_cell {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.overboard_field{
+    height: 100%;
+    width: 10%;
+    max-width: 10%;
+    display: flex;
+    flex-direction: column;
+    margin-right: 1em;
+}
+
+.rotate_90{
+    -webkit-transform: rotate(90deg);
+    -moz-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+    -o-transform: rotate(90deg);
+    transform: rotate(90deg);
+}
+
+.rotate_180{
+    -webkit-transform: rotate(180deg);
+    -moz-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    -o-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+
+.rotate_270{
+    -webkit-transform: rotate(270deg);
+    -moz-transform: rotate(270deg);
+    -ms-transform: rotate(270deg);
+    -o-transform: rotate(270deg);
+    transform: rotate(270deg);
+}
+
