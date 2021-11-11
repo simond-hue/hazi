@@ -172,6 +172,24 @@ body, html{
     border: 2px solid black;
 }
 
+.show_player{
+    aspect-ratio: 1/1;
+    width: 50%;
+    border-radius: 50%;
+    border: 2px solid black;
+    text-align: center;
+}
+
+.treasure{
+    width: 20%;
+    height: 20%;
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
 .rotate_90{
     -webkit-transform: rotate(90deg);
     -moz-transform: rotate(90deg);
