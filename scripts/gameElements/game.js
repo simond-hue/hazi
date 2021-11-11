@@ -1,9 +1,9 @@
 class Game{
     static CELL_TYPES = ['none','arrow', 'pipe', 'three_way', 'two_way'];
     constructor(player_number, kincs_number){
-        this.initGame(player_number, kincs_number)
         this.plain = document.createElement('div')
         this.initGameField();
+        this.initGame(player_number, kincs_number)
         this.initOverboardField();
         this.initArrowListeners();
     }
@@ -13,9 +13,14 @@ class Game{
         this.kincs_number = kincs_number;
         this.players = []
         let colors = [ {'r':184,'g':15,'b':10}, {'r':2,'g':105,'b':164}, {'r':236,'g':59,'b':131}, {'r':228,'g':208,'b':10} ]
+        let corners = [{'i':1, 'j':1}, {'i':1, 'j':7}, {'i':7, 'j':1}, {'i':7, 'j':7}]
+        corners.sort( () => .5 - Math.random() );
         for(let i = 0; i < this.player_number; i++){
-            this.players.push(new Player(`${i+1}. játékos`, colors[i]));
-        } 
+            let position = corners.pop()
+            this.players.push(new Player(`${i+1}. játékos`, colors[i], position, this.board.board[position.i][position.j].ui));
+        }
+        this.current_player = this.players[0];
+        this.directions_to_move = this.board.getDirections(this.current_player);
     }
 
     initGameField(){
@@ -96,9 +101,20 @@ class Game{
 }
 
 class Player{
-    constructor(name, color){
+    constructor(name, color, position, parent){
         this.name = name;
+        this.parent = parent;
         this.color = color;
+        this.position = position;
+        this.initUI();
+    }
+    initUI(){
+        this.ui = document.createElement('div');
+        this.ui.classList.add('player');
+        this.ui.name = 'player';
+        this.ui.id = 'player';
+        this.ui.style.backgroundColor = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
+        this.parent.appendChild(this.ui);
     }
 }
 
@@ -107,6 +123,38 @@ class Board{
         this.parent = parent;
         this.board = [];
         this.initUI();
+    }
+
+    getDirections(player){
+        let starting_at = this.board[player.position.i][player.position.j];
+        let out = this.findRoute(starting_at, [starting_at]);
+        console.log(out)
+    }
+    findRoute(start, acc){
+        let i = start.position.i;
+        let j = start.position.j;
+        let neighbours = [];
+        neighbours['upper'] = this.board[i-1][j];
+        neighbours['lower'] = this.board[i+1][j];
+        neighbours['left'] = this.board[i][j-1];
+        neighbours['right'] = this.board[i][j+1];
+        if(start.doors['up'] && neighbours['upper'].doors['down'] && !acc.includes(neighbours['upper'])){
+            acc.push(neighbours['upper'])
+            this.findRoute(neighbours['upper'], acc);
+        }
+        if(start.doors['right'] && neighbours['right'].doors['left'] && !acc.includes(neighbours['right'])){
+            acc.push(neighbours['right']);
+            this.findRoute(neighbours['right'], acc);
+        }
+        if(start.doors['left'] && neighbours['left'].doors['right'] && !acc.includes(neighbours['left'])){
+            acc.push(neighbours['left']);
+            this.findRoute(neighbours['left'], acc);
+        }
+        if(start.doors['down'] && neighbours['lower'].doors['up'] && !acc.includes(neighbours['lower'])){
+            acc.push(neighbours['lower']);
+            this.findRoute(neighbours['lower'], acc);
+        }
+        return acc;
     }
 
     initUI(){
