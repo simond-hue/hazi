@@ -15,26 +15,52 @@ class Game{
         let colors = [ {'r':184,'g':15,'b':10}, {'r':2,'g':105,'b':164}, {'r':236,'g':59,'b':131}, {'r':228,'g':208,'b':10} ]
         let corners = [{'i':1, 'j':1}, {'i':1, 'j':7}, {'i':7, 'j':1}, {'i':7, 'j':7}]
         corners.sort( () => .5 - Math.random() );
+        let possible_treasure_positions = [];
+        for(let i = 1; i< 8; i++){
+            for(let j = 1;j < 8; j++){
+                let is_corner = false;
+                for(let k = 0; k < corners.length; k++){
+                    if(corners[k].i == i && corners[k].j == j){
+                        is_corner = true;
+                        break;
+                    }
+                }
+                if(!is_corner) possible_treasure_positions.push({'i':i,'j':j});
+            }
+        }
+        possible_treasure_positions.sort( () => .5 - Math.random() );
         for(let i = 0; i < this.player_number; i++){
             let position = corners.pop();
             let kincsek = [];
-            let possible_treasure_positions = [];
-            for(let j = 0; j < this.kincs_number; j++){
-                let x = Math.floor(Math.random()*5+2);
-                let y = Math.floor(Math.random()*5+2);
-                possible_treasure_positions.push({'i':x,'j':y});
-            }
-            possible_treasure_positions.sort( () => .5 - Math.random() );
             let color = colors[i];
             for(let j = 0; j < this.kincs_number; j++){
                 let treasue_pos = possible_treasure_positions.pop();
-                console.log(treasue_pos);
                 kincsek.push(new Treasure(color,treasue_pos,this.board.board[treasue_pos.i][treasue_pos.j].ui,false));
             }
             this.players.push(new Player(`${i+1}. játékos`, color, position, this.board.board[position.i][position.j].ui, kincsek));
         }
         this.current_player = this.players[0];
-        this.directions_to_move = this.board.getDirections(this.current_player);
+        this.turn = 0;
+        this.gameEnded = false;
+        this.startTurn();
+    }
+
+    startTurn(){
+        //TO:DO: megírni a movementet
+        //       megírni a turn base-eket
+        //       csicsa
+        //       player adatok kiírása
+        let player_can_move = this.board.getDirections(this.current_player);
+        player_can_move.forEach(e => {
+            this.apply_can_move(e.ui);
+            e.ui.addEventListener('click',() =>{
+                this.board.movePlayer(this.current_player, e);
+            })
+        });
+    }
+    
+    apply_can_move(ui){
+        ui.style.boxShadow = `inset 0px 0px 0px 2px rgb(${this.current_player.color.r},${this.current_player.color.g},${this.current_player.color.b})`
     }
 
     initGameField(){
@@ -52,15 +78,19 @@ class Game{
     initArrowListeners(){
         let arrows = this.board.getCells(Game.CELL_TYPES[1]);
         arrows.forEach(arrow =>{
-            arrow.ui.addEventListener('click',(event) => {
-                arrow.ui.current_arrow = arrow;
-                arrow.ui.overboard_element = this.overboarded_cell;
-                arrow.ui.player = this.current_player;
-                arrow.ui.last_move = this.last_move;
-                if(!this.last_move || this.last_move.position != arrow.position) this.overboarded_cell = this.board.shift(event);
-                this.last_move = arrow;
-                this.updateUI();
-            })
+            arrow.ui.addEventListener('click',(event) =>{
+                if(!this.current_player.movedBoard){
+                    this.current_player.movedBoard = true;
+                    arrow.ui.current_arrow = arrow;
+                    arrow.ui.overboard_element = this.overboarded_cell;
+                    arrow.ui.player = this.current_player;
+                    arrow.ui.game = this;
+                    this.overboarded_cell = this.board.shift(event);
+                    this.updateUI();
+                    let player_can_move = this.board.getDirections(this.current_player);
+                    player_can_move.forEach(e => {this.apply_can_move(e.ui);});
+                }
+            });
         })
     }
 
@@ -190,7 +220,7 @@ class Board{
     getDirections(player){
         let starting_at = this.board[player.position.i][player.position.j];
         let out = this.findRoute(starting_at, [starting_at]);
-        console.log(out)
+        return out;
     }
     findRoute(start, acc){
         let i = start.position.i;
@@ -296,7 +326,7 @@ class Board{
     }
 
     shift(event){
-        let last_move = event.target.last_move;
+        let last_move = event.target.game.last_move;
         let arrow = event.target.current_arrow;
         let new_overboard_element = null;
         let old_overboard_element = event.target.overboard_element;
@@ -315,6 +345,11 @@ class Board{
         if(arrow.direction == 'right'){
             let row = arrow.position.i;      
             new_overboard_element = this.board[row][7];
+            if(new_overboard_element.ui.innerHTML){
+                this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
+                this.board[row].splice(1,0,new_overboard_element);
+                return old_overboard_element;
+            }
             Cell.switchParent(new_overboard_element,old_overboard_element);
             Cell.switchUI(new_overboard_element,old_overboard_element);
             this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
@@ -327,6 +362,15 @@ class Board{
         if(arrow.direction == 'left'){
             let row = arrow.position.i;      
             new_overboard_element = this.board[row][1];
+            if(new_overboard_element.ui.innerHTML){
+                this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
+                this.board[row].splice(7,0,new_overboard_element);
+                for(let i = 1; i < 8; i++){
+                    this.board[row][i].position.j = i;
+                    this.board[row][i].position.i = row;
+                }
+                return old_overboard_element;
+            }
             Cell.switchParent(new_overboard_element,old_overboard_element);
             Cell.switchUI(new_overboard_element,old_overboard_element);
             this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
@@ -339,6 +383,15 @@ class Board{
         if(arrow.direction == 'down'){
             let column = arrow.position.j;      
             new_overboard_element = this.board[7][column];
+            if(new_overboard_element.ui.innerHTML) {
+                for(let i = 7; i > 0; i--){
+                    if(i != 1) this.board[i][column] = this.board[i-1][column];
+                    if(i == 1) this.board[i][column] = new_overboard_element;
+                    this.board[i][column].position.j = column;
+                    this.board[i][column].position.i = i;
+                }
+                return old_overboard_element;
+            }
             Cell.switchParent(new_overboard_element,old_overboard_element);
             Cell.switchUI(new_overboard_element,old_overboard_element);
             for(let i = 7; i > 0; i--){
@@ -351,6 +404,15 @@ class Board{
         if(arrow.direction == 'up'){
             let column = arrow.position.j;      
             new_overboard_element = this.board[1][column];
+            if(new_overboard_element.ui.innerHTML){ 
+                for(let i = 1; i < 8; i++){
+                    if(i != 7) this.board[i][column] = this.board[i+1][column];
+                    if(i == 7) this.board[i][column] = new_overboard_element;
+                    this.board[i][column].position.j = column;
+                    this.board[i][column].position.i = i;
+                }
+                return old_overboard_element;
+            }
             Cell.switchParent(new_overboard_element,old_overboard_element);
             Cell.switchUI(new_overboard_element,old_overboard_element);
             for(let i = 1; i < 8; i++){
@@ -360,6 +422,7 @@ class Board{
                 this.board[i][column].position.i = i;
             }
         }
+        event.target.game.last_move = arrow;
         return new_overboard_element;
     }
 
@@ -378,6 +441,7 @@ class Board{
             row.id = 'row';
             row.classList.add('row');
             for(let j = 0; j < this.board.length; j++){
+                this.board[i][j].ui.style.boxShadow = null;
                 row.appendChild(this.board[i][j].ui);
             }
             this.ui.appendChild(row);

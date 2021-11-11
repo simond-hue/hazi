@@ -84,6 +84,7 @@ body, html{
     display: flex;
     align-items: center;
     justify-content: center;
+    border-collapse: collapse;
 }
 
 .row{
@@ -99,6 +100,10 @@ body, html{
     background-image: url('../assets/arrow.png');
     background-size: cover;
     transition-duration: 1s;
+}
+
+.move{
+    transition: ease-in-out 1s;
 }
 
 .arrow:hover{
