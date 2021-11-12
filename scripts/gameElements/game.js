@@ -1,3 +1,10 @@
+/*
+    TODO: BUGOS A MOVEMENT UI-OKAT UPDATELNI KELL
+          TURN BASED
+          JÁTÉKOS ADATAINAK KIÍRÁSA
+          ENDCHECK
+*/
+
 class Game{
     static CELL_TYPES = ['none','arrow', 'pipe', 'three_way', 'two_way'];
     constructor(player_number, kincs_number){
@@ -5,7 +12,26 @@ class Game{
         this.initGameField();
         this.initGame(player_number, kincs_number)
         this.initOverboardField();
-        this.initArrowListeners();
+        this.initListeners();
+        this.addEventListenerToCells();
+    }
+
+    
+    addEventListenerToCells(){
+        for(let i = 1; i < 8; i++){
+            for(let j = 1; j < 8; j++){
+                this.board.board[i][j].ui.addEventListener('click', e=>{
+                    if(this.board.board[i][j].canBeClicked){
+                        this.board.movePlayer(this.current_player,this.board.board[i][j]);
+                        for(let k = 1; k < 8; k++){
+                            for(let l = 1; l < 8; l++){
+                                this.board.board[l][k].canBeClicked = false;
+                            }
+                        }
+                    }
+                })
+            }
+        }
     }
 
     initGame(player_number, kincs_number){
@@ -35,27 +61,22 @@ class Game{
             let color = colors[i];
             for(let j = 0; j < this.kincs_number; j++){
                 let treasue_pos = possible_treasure_positions.pop();
-                kincsek.push(new Treasure(color,treasue_pos,this.board.board[treasue_pos.i][treasue_pos.j].ui,false));
+                let treasure = new Treasure(color,treasue_pos,this.board.board[treasue_pos.i][treasue_pos.j].ui,false)
+                kincsek.push(treasure);
+                this.board.board[treasue_pos.i][treasue_pos.j].treasure = treasure; 
             }
             this.players.push(new Player(`${i+1}. játékos`, color, position, this.board.board[position.i][position.j].ui, kincsek));
         }
         this.current_player = this.players[0];
         this.turn = 0;
         this.gameEnded = false;
-        this.startTurn();
+        this.startTurn()
     }
 
     startTurn(){
-        //TO:DO: megírni a movementet
-        //       megírni a turn base-eket
-        //       csicsa
-        //       player adatok kiírása
         let player_can_move = this.board.getDirections(this.current_player);
         player_can_move.forEach(e => {
             this.apply_can_move(e.ui);
-            e.ui.addEventListener('click',() =>{
-                this.board.movePlayer(this.current_player, e);
-            })
         });
     }
     
@@ -75,7 +96,7 @@ class Game{
         this.board = new Board(this.plain);
     }
 
-    initArrowListeners(){
+    initListeners(){
         let arrows = this.board.getCells(Game.CELL_TYPES[1]);
         arrows.forEach(arrow =>{
             arrow.ui.addEventListener('click',(event) =>{
@@ -88,7 +109,10 @@ class Game{
                     this.overboarded_cell = this.board.shift(event);
                     this.updateUI();
                     let player_can_move = this.board.getDirections(this.current_player);
-                    player_can_move.forEach(e => {this.apply_can_move(e.ui);});
+                    player_can_move.forEach(e => {
+                        e.canBeClicked = true;
+                        this.apply_can_move(e.ui);
+                    });
                 }
             });
         })
@@ -181,6 +205,17 @@ class Player{
         kincsek.forEach((e)=> this.kincsek.push(e));
         this.initUI();
     }
+
+    removeTreasure(){
+        this.kincsek.forEach(t =>{
+            if(t.position.i = this.position.i && t.position.j == this.position.j){
+                this.kincsek.splice(this.kincsek.indexOf(t),1);
+                console.log(this.kincsek);
+                return; 
+            }
+        })
+    }
+
     initUI(){
         this.ui = document.createElement('div');
         this.ui.classList.add('player');
@@ -222,6 +257,8 @@ class Board{
         let out = this.findRoute(starting_at, [starting_at]);
         return out;
     }
+
+
     findRoute(start, acc){
         let i = start.position.i;
         let j = start.position.j;
@@ -348,6 +385,10 @@ class Board{
             if(new_overboard_element.ui.innerHTML){
                 this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
                 this.board[row].splice(1,0,new_overboard_element);
+                for(let i = 1; i < 8; i++){
+                    this.board[row][i].position.j = i;
+                    this.board[row][i].position.i = row;
+                }
                 return old_overboard_element;
             }
             Cell.switchParent(new_overboard_element,old_overboard_element);
@@ -431,6 +472,12 @@ class Board{
         this.ui = document.createElement('div');
         this.ui.id = 'game_main';
         this.ui.classList.add('game_main');
+        for(let i = 1; i < 8; i++){
+            for(let j = 0; j < 8; j++){
+                this.board[i][j].ui.remove();
+                this.board[i][j].updateUI();
+            }
+        }
         this.appendCells()
         this.parent.appendChild(this.ui);
     }
@@ -447,10 +494,22 @@ class Board{
             this.ui.appendChild(row);
         }
     }
+
+    movePlayer(player, cell){
+        player.position = cell.position;
+        cell.ui.appendChild(player.ui);
+        player.ui.remove();
+        player.parent = cell.ui;
+        player.initUI();
+        if(cell.treasure && player.kincsek.includes(cell.treasure)){
+            player.removeTreasure();
+        }
+    }
 }
 
 class Cell{
     constructor(parent, type, position,fixed,direction){
+        this.treasure = null;
         this.fixed = fixed;
         this.direction = direction;
         this.position = position;
@@ -458,8 +517,25 @@ class Cell{
         this.doors = []
         this.type = type;
         this.rotatedBy = 0;
+        this.canBeClicked = false;
         this.generateDoors();
         this.initUI()
+        if(this.fixed){
+            this.rotate_properly();
+            return;
+        }
+        if(this.type != Game.CELL_TYPES[0] && this.type != Game.CELL_TYPES[1]){
+            let rng = Math.floor(Math.random()*4);
+            if(rng == 1){
+                this.rotate90();
+            }
+            if(rng == 2){
+                this.rotate180();
+            }
+            if(rng == 3){
+                this.rotate270();
+            }
+        }
     }
 
     generateDoors(){
@@ -498,6 +574,12 @@ class Cell{
         this.parent.appendChild(this.ui);
     }
 
+    static switchUIComp(cell1, cell2){
+        let tmp = cell1.ui;
+        cell1.ui = cell2.ui;
+        cell2.ui = tmp;
+    }
+
     addImage(){
         if(this.type == Game.CELL_TYPES[1]){
             this.ui.classList.add('arrow')
@@ -523,20 +605,7 @@ class Cell{
                 this.ui.classList.add('two_way');
                 break;       
         }
-        if(this.fixed){
-            this.rotate_properly();
-            return;
-        }
-        let rng = Math.floor(Math.random()*4);
-        if(rng == 1){
-            this.rotate90();
-        }
-        if(rng == 2){
-            this.rotate180();
-        }
-        if(rng == 3){
-            this.rotate270();
-        }
+
     }
 
     rotate_properly(){
