@@ -429,9 +429,7 @@ class Board{
                 }
                 return old_overboard_element;
             }
-            Cell.switchParent(new_overboard_element,old_overboard_element);
-            Cell.switchUI(new_overboard_element,old_overboard_element);
-            Cell.switchRoation(new_overboard_element,old_overboard_element);
+            Cell.switch(new_overboard_element,old_overboard_element);
             this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
             this.board[row].splice(1,0,old_overboard_element);
             for(let i = 1; i < 8; i++){
@@ -451,10 +449,7 @@ class Board{
                 }
                 return old_overboard_element;
             }
-            Cell.switchParent(new_overboard_element,old_overboard_element);
-            Cell.switchUI(new_overboard_element,old_overboard_element);
-            Cell.switchRoation(new_overboard_element,old_overboard_element);
-            
+            Cell.switch(new_overboard_element,old_overboard_element);
             this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
             this.board[row].splice(7,0,old_overboard_element);
             for(let i = 1; i < 8; i++){
@@ -474,10 +469,7 @@ class Board{
                 }
                 return old_overboard_element;
             }
-            Cell.switchParent(new_overboard_element,old_overboard_element);
-            Cell.switchUI(new_overboard_element,old_overboard_element);
-            Cell.switchRoation(new_overboard_element,old_overboard_element);
-            
+            Cell.switch(new_overboard_element,old_overboard_element);
             for(let i = 7; i > 0; i--){
                 if(i != 1) this.board[i][column] = this.board[i-1][column];
                 if(i == 1) this.board[i][column] = old_overboard_element;
@@ -497,10 +489,7 @@ class Board{
                 }
                 return old_overboard_element;
             }
-            Cell.switchParent(new_overboard_element,old_overboard_element);
-            Cell.switchUI(new_overboard_element,old_overboard_element);
-            Cell.switchRoation(new_overboard_element,old_overboard_element);
-            
+            Cell.switch(new_overboard_element,old_overboard_element);
             for(let i = 1; i < 8; i++){
                 if(i != 7) this.board[i][column] = this.board[i+1][column];
                 if(i == 7) this.board[i][column] = old_overboard_element;
@@ -697,30 +686,20 @@ class Cell{
         this.rotate90();
     }
 
-    static switchType(cell1, cell2){
-        let tmp = cell1.type;
-        cell1.type = cell2.type;
-        cell2.type = tmp;
+    static switch(new_cell, old_cell){
+        let tmp = Object.assign({},new_cell);
+        Object.assign(new_cell,old_cell);
+        Object.assign(old_cell,tmp);
+        console.log(new_cell,old_cell)
+        Cell.switchClassList(new_cell,old_cell);
     }
 
-    static switchRoation(cell1, cell2){
-        let tmp = cell1.rotatedBy;
-        cell1.rotatedBy = cell2.rotatedBy;
-        cell2.rotatedBy = tmp;
-    }
-
-    static switchParent(cell1, cell2){
-        let old_parent = cell1.parent;
-        cell1.parent = cell2.parent;
-        cell2.parent = old_parent;
-    }
-
-    static switchUI(new_overboard_element, old_overboard_element){
-        new_overboard_element.ui.classList.add('overboard_cell');
-        new_overboard_element.ui.id = 'overboard_cell';
-        new_overboard_element.ui.classList.remove('cell');
-        old_overboard_element.ui.classList.add('cell');
-        old_overboard_element.ui.classList.remove('overboard_cell');
-        old_overboard_element.ui.id = 'cell';
+    static switchClassList(new_cell,old_cell){
+        old_cell.ui.classList.add('cell');
+        new_cell.ui.classList.remove('cell')
+        old_cell.ui.classList.remove('overboard_cell');
+        new_cell.ui.classList.add('overboard_cell');
+        old_cell.ui.id = "cell";
+        new_cell.ui.id = "overboard_cell";
     }
 }
