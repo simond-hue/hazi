@@ -1,1 +1,1 @@
-app = new Application("Beadandó");
+var app = new Application("Beadandó");

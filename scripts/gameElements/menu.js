@@ -12,7 +12,7 @@ class Menu{
         this.plain.appendChild(this.kincskartya_count.input_field);
         this.new_game.button.addEventListener('click', this.start_new_game);
         this.description_button = new MenuButtonWrapper('A játék leírása', 'show_description_button');
-        this.description_button.button.addEventListener('click', (event) => { this.show_description(this.plain)});
+        this.description_button.button.addEventListener('click', (event) => { this.show_description(this.plain)}, {once:true});
         this.plain.appendChild(this.new_game.button);
         this.plain.appendChild(this.description_button.button);
         document.body.appendChild(this.plain);

@@ -1,62 +1,24 @@
 /*
-    TODO: BUGOS MOVEMENT
-          ENDCHECK
-          CHEKC LEÍRÁS
+    TODO: csicsa
 */
 
+const CELL_TYPES = ['none','arrow', 'pipe', 'three_way', 'two_way'];
+
 class Game{
-    static CELL_TYPES = ['none','arrow', 'pipe', 'three_way', 'two_way'];
     constructor(player_number, kincs_number){
         this.plain = document.createElement('div')
         this.initGameField();
         this.initGame(player_number, kincs_number)
         this.initOverboardField();
         this.initListeners();
-        this.addEventListenerToCells();
-    }
-
-    
-    addEventListenerToCells(){
-        let current_overboard = this.overboarded_cell;
-        current_overboard.ui.addEventListener('click', e=>{
-            if(current_overboard.canBeClicked){
-                console.log(current_overboard.rotatedBy,current_overboard.type);
-                this.current_player.movedBoard = false;
-                this.board.movePlayer(this.current_player,current_overboard, e.target);
-                for(let k = 1; k < 8; k++){
-                    for(let l = 1; l < 8; l++){
-                        this.remove_can_move(this.board.board[l][k].ui);
-                        current_overboard.canBeClicked = false;
-                    }
-                }
-                this.switchTurn();
-            }
-        })
-        for(let i = 1; i < 8; i++){
-            for(let j = 1; j < 8; j++){
-                this.board.board[i][j].ui.addEventListener('click', e=>{
-                    console.log(this.board.board[i][j].rotatedBy,this.board.board[i][j].type);
-                    if(this.board.board[i][j].canBeClicked){
-                        this.current_player.movedBoard = false;
-                        this.board.movePlayer(this.current_player,this.board.board[i][j], e.target);
-                        for(let k = 1; k < 8; k++){
-                            for(let l = 1; l < 8; l++){
-                                this.remove_can_move(this.board.board[l][k].ui);
-                                this.board.board[l][k].canBeClicked = false;
-                            }
-                        }
-                        this.switchTurn();
-                    }
-                })
-            }
-        }
     }
 
     switchTurn(){
         this.turn++;
         this.current_player = this.players[this.turn%this.player_number];
         let overboard_elems = document.body.querySelectorAll('.show_overboard_box');
-        overboard_elems[0].firstChild.innerText = "A jelenlegi játékos: " + this.current_player.name;
+        overboard_elems[0].firstChild.innerHTML = `A jelenlegi játékos:<br>${this.current_player.name}`;
+        document.getElementById('treasure_amount').innerText = `${this.current_player.kincsek.length} kincse van még hátra!`; 
         overboard_elems[1].firstChild.style.backgroundColor = `rgb(${this.current_player.color.r},${this.current_player.color.g},${this.current_player.color.b})`;
         let player_can_move = this.board.getDirections(this.current_player);
         player_can_move.forEach(element => {
@@ -132,7 +94,7 @@ class Game{
     }
 
     initListeners(){
-        let arrows = this.board.getCells(Game.CELL_TYPES[1]);
+        let arrows = this.board.getCells(CELL_TYPES[1]);
         arrows.forEach(arrow =>{
             arrow.ui.addEventListener('click',(event) =>{
                 if(!this.current_player.movedBoard){
@@ -144,17 +106,32 @@ class Game{
                     this.updateUI();
                     this.overboarded_cell.canBeClicked = false;
                     let player_can_move = this.board.getDirections(this.current_player);
-                    console.log(player_can_move, this.overboarded_cell.canBeClicked);
                     player_can_move.forEach(e => {
                         e.canBeClicked = true;
-                        console.log(e.canBeClicked)
+                        e.ui.game = this;
+                        e.ui.wrapper = e;
+                        e.ui.movable = player_can_move;
+                        e.ui.moveFunction = this.move;
+                        e.ui.addEventListener('click',this.move);
                         this.apply_can_move(e.ui);
                     });
                 }
             });
         })
     }
-
+    move(event){
+        event.target.game.board.movePlayer(event.target.game.current_player,event.target.wrapper, event.target);
+        event.target.movable.forEach(element =>{
+            event.target.game.remove_can_move(element.ui);
+            element.ui.removeEventListener('click',event.target.moveFunction);
+            event.target.game.current_player.movedBoard = false;
+        })
+        if(event.target.game.current_player.kincsek.length == 0 && event.target.game.current_player.isBack()) event.target.game.gameEnded = true;
+        if(!event.target.game.gameEnded) event.target.game.switchTurn();
+        else{
+            alert(`A(z) ${event.target.game.current_player.name} játékos győzött!`);
+        }
+    }
     updateUI(){
         this.board.updateUI();
         let overboard_old = this.overboard_plain;
@@ -179,7 +156,8 @@ class Game{
         box.name = 'show_overboard_box';
         box.classList.add('show_overboard_box');
         this.overboarded_cell = new Cell(box,this.board.getOverboardedCell(),{'i': -1, 'j': -1},false,null);
-        
+        this.overboarded_cell.rotatedBy = 0;
+
         let overboard_subscript_box = document.createElement('div');
         overboard_subscript_box.id = 'show_overboard_box';
         overboard_subscript_box.name = 'show_overboard_box';
@@ -193,7 +171,7 @@ class Game{
         overboard_current_player_box.id = 'show_overboard_box';
         overboard_current_player_box.name = 'show_overboard_box';
         overboard_current_player_box.classList.add('show_overboard_box');
-        let overboard_show_player = document.createElement('div');
+        let overboard_show_player = document.createElement('div'); 
         overboard_show_player.classList.add('show_player');
         overboard_show_player.style.backgroundColor = `rgb(${this.current_player.color.r},${this.current_player.color.g},${this.current_player.color.b})`;
         overboard_current_player_box.appendChild(overboard_show_player)
@@ -204,9 +182,14 @@ class Game{
         show_player_subscript_box.classList.add('show_overboard_box');
         let show_player_subscript = document.createElement('h3');
         show_player_subscript.innerHTML = `A jelenlegi játékos:<br>${this.current_player.name}`
+        let treasure_amount_text = document.createElement('h6');
         show_player_subscript.classList.add('overboard_subscript');
         show_player_subscript_box.appendChild(show_player_subscript);
-
+        treasure_amount_text.innerText = `${this.current_player.kincsek.length} kincse van még hátra!`;
+        treasure_amount_text.classList.add('treasure_text');
+        treasure_amount_text.id = 'treasure_amount';
+        show_player_subscript_box.style.height = 'fit-content';
+        show_player_subscript_box.appendChild(treasure_amount_text);
         top_part.appendChild(show_player_subscript_box);
         top_part.appendChild(overboard_current_player_box);
         top_part.appendChild(overboard_subscript_box);
@@ -222,8 +205,15 @@ class Game{
         rotate_button.id = 'rotate_button';
         rotate_button.name = 'rotate_button';
         rotate_button.innerText = 'Forgatás';
+        this.restart_button = document.createElement('button'); 
+        this.restart_button.classList.add('new_game_button')
+        this.restart_button.id = 'new_game_button';
+        this.restart_button.name = 'new_game_button';
+        this.restart_button.innerText = 'Új játék';
         rotate_button.addEventListener('click', ()=> this.overboarded_cell.rotate90());
+        this.restart_button.addEventListener('click', ()=> { document.body.innerHTML = ""; app = new Application('Beadandó'); });
         bottom_part.appendChild(rotate_button);
+        bottom_part.appendChild(this.restart_button);
         this.overboard_plain.appendChild(bottom_part);
         
         this.plain.appendChild(this.overboard_plain);
@@ -247,7 +237,7 @@ class Player{
         this.kincsek.forEach(t =>{
             if(t.position.i = this.position.i && t.position.j == this.position.j){
                 this.kincsek.splice(this.kincsek.indexOf(t),1);
-                console.log(this.kincsek);
+                t.ui.remove();
                 return; 
             }
         })
@@ -260,6 +250,9 @@ class Player{
         this.ui.id = 'player';
         this.ui.style.backgroundColor = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
         this.parent.appendChild(this.ui);
+    }
+    isBack(){
+        return this.position.i == this.starting_position.i && this.position.j == this.starting_position.j;
     }
 }
 
@@ -334,13 +327,13 @@ class Board{
     initCells(){
         this.elements = [];
         for(let i = 0; i < 13; i++){
-            this.elements.push(Game.CELL_TYPES[2]);
+            this.elements.push(CELL_TYPES[2]);
         }
         for(let i = 0; i < 15; i++){
-            this.elements.push(Game.CELL_TYPES[4]);
+            this.elements.push(CELL_TYPES[4]);
         }
         for(let i = 0; i < 6; i++){
-            this.elements.push(Game.CELL_TYPES[3]);
+            this.elements.push(CELL_TYPES[3]);
         }
         this.elements.sort( () => .5 - Math.random() );
         for(let i = 0; i < 9; i++){
@@ -349,11 +342,11 @@ class Board{
             row.id = 'row';
             row.classList.add('row');
             for(let j = 0; j < 9; j++){
-                let type = Game.CELL_TYPES[0];
+                let type = CELL_TYPES[0];
                 let fixed = false;
                 let direction = null;
                 if(((i == 0 || i == 8) && (j!=0 && j!=8 && j%2 == 0)) || ((i!=0 && i!=8) && (j == 0 || j == 8) && (i%2==0))){
-                    type = Game.CELL_TYPES[1];
+                    type = CELL_TYPES[1];
                     if(i == 0){ direction = 'down'; }
                     if(i == 8){ direction = 'up'; }
                     if(i > 0 && i < 8){
@@ -365,10 +358,10 @@ class Board{
                     if((i%2 == 1 && j%2 == 1)){
                         fixed = true;
                         if((j == 1 || j == 7) && (i == 1 || i == 7)){
-                            type = Game.CELL_TYPES[4];
+                            type = CELL_TYPES[4];
                         }
                         else{
-                            type = Game.CELL_TYPES[3];
+                            type = CELL_TYPES[3];
                         }
                     }
                     else{
@@ -380,7 +373,6 @@ class Board{
             this.ui.appendChild(row);
             this.board.push(line);
         }
-        console.log(this.board);
     }
 
     getOverboardedCell(){
@@ -424,15 +416,18 @@ class Board{
                 this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
                 this.board[row].splice(1,0,new_overboard_element);
                 for(let i = 1; i < 8; i++){
+                    if(this.board[row][i].treasure) { this.board[row][i].treasure.position.i = row; this.board[row][i].treasure.position.j = i; }
                     this.board[row][i].position.j = i;
                     this.board[row][i].position.i = row;
                 }
+                event.target.game.last_move = arrow;
                 return old_overboard_element;
             }
             Cell.switch(new_overboard_element,old_overboard_element);
             this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
             this.board[row].splice(1,0,old_overboard_element);
             for(let i = 1; i < 8; i++){
+                if(this.board[row][i].treasure) { this.board[row][i].treasure.position.i = row; this.board[row][i].treasure.position.j = i; }
                 this.board[row][i].position.j = i;
                 this.board[row][i].position.i = row;
             }
@@ -444,15 +439,18 @@ class Board{
                 this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
                 this.board[row].splice(7,0,new_overboard_element);
                 for(let i = 1; i < 8; i++){
+                    if(this.board[row][i].treasure) { this.board[row][i].treasure.position.i = row; this.board[row][i].treasure.position.j = i; }
                     this.board[row][i].position.j = i;
                     this.board[row][i].position.i = row;
                 }
+                event.target.game.last_move = arrow;
                 return old_overboard_element;
             }
             Cell.switch(new_overboard_element,old_overboard_element);
             this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
             this.board[row].splice(7,0,old_overboard_element);
             for(let i = 1; i < 8; i++){
+                if(this.board[row][i].treasure) { this.board[row][i].treasure.position.i = row; this.board[row][i].treasure.position.j = i; }
                 this.board[row][i].position.j = i;
                 this.board[row][i].position.i = row;
             }
@@ -462,15 +460,18 @@ class Board{
             new_overboard_element = this.board[7][column];
             if(new_overboard_element.ui.innerHTML) {
                 for(let i = 7; i > 0; i--){
+                    if(this.board[i][column].treasure) { this.board[i][column].treasure.position.i = i; this.board[i][column].treasure.position.j = column; }
                     if(i != 1) this.board[i][column] = this.board[i-1][column];
                     if(i == 1) this.board[i][column] = new_overboard_element;
                     this.board[i][column].position.j = column;
                     this.board[i][column].position.i = i;
                 }
+                event.target.game.last_move = arrow;
                 return old_overboard_element;
             }
             Cell.switch(new_overboard_element,old_overboard_element);
             for(let i = 7; i > 0; i--){
+                if(this.board[i][column].treasure) { this.board[i][column].treasure.position.i = i; this.board[i][column].treasure.position.j = column; }
                 if(i != 1) this.board[i][column] = this.board[i-1][column];
                 if(i == 1) this.board[i][column] = old_overboard_element;
                 this.board[i][column].position.j = column;
@@ -482,15 +483,18 @@ class Board{
             new_overboard_element = this.board[1][column];
             if(new_overboard_element.ui.innerHTML){ 
                 for(let i = 1; i < 8; i++){
+                    if(this.board[i][column].treasure) { this.board[i][column].treasure.position.i = i; this.board[i][column].treasure.position.j = column; }
                     if(i != 7) this.board[i][column] = this.board[i+1][column];
                     if(i == 7) this.board[i][column] = new_overboard_element;
                     this.board[i][column].position.j = column;
                     this.board[i][column].position.i = i;
                 }
+                event.target.game.last_move = arrow;
                 return old_overboard_element;
             }
             Cell.switch(new_overboard_element,old_overboard_element);
             for(let i = 1; i < 8; i++){
+                if(this.board[i][column].treasure) { this.board[i][column].treasure.position.i = i; this.board[i][column].treasure.position.j = column; }
                 if(i != 7) this.board[i][column] = this.board[i+1][column];
                 if(i == 7) this.board[i][column] = old_overboard_element;
                 this.board[i][column].position.j = column;
@@ -524,7 +528,6 @@ class Board{
     }
 
     movePlayer(player, cell, target){
-        console.log(cell.position);
         player.position = cell.position;
         target.appendChild(player.ui);
         player.ui.remove();
@@ -549,11 +552,12 @@ class Cell{
         this.canBeClicked = false;
         this.generateDoors();
         this.initUI()
+        if(this.position.i == -1 && this.position.j == -1) return;
         if(this.fixed){
             this.rotate_properly();
             return;
         }
-        if(this.type != Game.CELL_TYPES[0] && this.type != Game.CELL_TYPES[1]){
+        if(this.type != CELL_TYPES[0] && this.type != CELL_TYPES[1]){
             let rng = Math.floor(Math.random()*4);
             if(rng == 1){
                 this.rotate90();
@@ -568,16 +572,16 @@ class Cell{
     }
 
     generateDoors(){
-        if(this.type == Game.CELL_TYPES[0] || this.type == Game.CELL_TYPES[1]){
+        if(this.type == CELL_TYPES[0] || this.type == CELL_TYPES[1]){
             this.setDoors(false,false,false,false);  
         }
-        else if(this.type == Game.CELL_TYPES[2]){
+        else if(this.type == CELL_TYPES[2]){
             this.setDoors(false,false,true,true);
         }
-        else if(this.type == Game.CELL_TYPES[3]){
+        else if(this.type == CELL_TYPES[3]){
             this.setDoors(true,false,true,true)
         }
-        else if(this.type == Game.CELL_TYPES[4]){
+        else if(this.type == CELL_TYPES[4]){
             this.setDoors(false,true,false,true)
         }
     }
@@ -610,7 +614,7 @@ class Cell{
     }
 
     addImage(){
-        if(this.type == Game.CELL_TYPES[1]){
+        if(this.type == CELL_TYPES[1]){
             this.ui.classList.add('arrow')
             if(this.position.i == 8){
                 this.ui.classList.add('rotate_180');
@@ -624,13 +628,13 @@ class Cell{
             return;
         }
         switch(this.type){
-            case Game.CELL_TYPES[2]:
+            case CELL_TYPES[2]:
                 this.ui.classList.add('pipe');
                 break;
-            case Game.CELL_TYPES[3]:
+            case CELL_TYPES[3]:
                 this.ui.classList.add('three_way');
                 break;
-            case Game.CELL_TYPES[4]:
+            case CELL_TYPES[4]:
                 this.ui.classList.add('two_way');
                 break;       
         }
@@ -638,7 +642,7 @@ class Cell{
     }
 
     rotate_properly(){
-        if(this.type == Game.CELL_TYPES[4]){
+        if(this.type == CELL_TYPES[4]){
             if(this.position.i == 1 && this.position.j == 7){
                 this.rotate90();
             }
@@ -649,7 +653,7 @@ class Cell{
                 this.rotate180();
             }
         }
-        if(this.type == Game.CELL_TYPES[3]){
+        if(this.type == CELL_TYPES[3]){
             if(this.position.i == 1){
                 this.rotate180();
             }
@@ -668,11 +672,12 @@ class Cell{
     }
     
     rotate90(){
-        if(this.rotatedBy == 450) this.rotatedBy = 90
         this.rotatedBy += 90;
-        this.ui.classList.remove(`rotate_${(this.rotatedBy - 90) % 360}`)
-        this.ui.classList.add(`rotate_${(this.rotatedBy) % 360}`)
+        this.ui.classList.remove(`rotate_${(this.rotatedBy - 90)}`)
+        if(this.rotatedBy >= 360) this.rotatedBy = this.rotatedBy%360
+        this.ui.classList.add(`rotate_${(this.rotatedBy)}`)
         this.setDoors(this.doors['left'],this.doors['right'],this.doors['down'],this.doors['up']);
+        
     }
 
     rotate180(){
@@ -686,20 +691,69 @@ class Cell{
         this.rotate90();
     }
 
-    static switch(new_cell, old_cell){
-        let tmp = Object.assign({},new_cell);
-        Object.assign(new_cell,old_cell);
-        Object.assign(old_cell,tmp);
-        console.log(new_cell,old_cell)
-        Cell.switchClassList(new_cell,old_cell);
+    setParent(parent){
+        this.parent = parent;
     }
 
-    static switchClassList(new_cell,old_cell){
+    setDoorsArray(doors){
+        for(let i = 0; i < this.doors.length; i++){
+            this.doors[i] = doors[i];
+        }
+    }
+
+    setType(type){
+        switch(type){
+            case 'two_way':
+                this.type = CELL_TYPES[4];
+                break;
+            case 'three_way':
+                this.type = CELL_TYPES[3];
+                break;
+            case 'pipe':
+                this.type = CELL_TYPES[2];
+                break;
+        }
+    }
+
+    setRotatedBy(rb){
+        this.rotatedBy = rb;
+    }
+
+    static switch(new_cell, old_cell){
+        let old_parent = old_cell.parent;
+        let new_parent = new_cell.parent;
+        old_cell.setParent(new_parent);
+        new_cell.setParent(old_parent);
+
+        let old_doors = old_cell.doors;
+        let new_doors = new_cell.doors;
+        old_cell.setDoorsArray(new_doors);
+        new_cell.setDoorsArray(old_doors);
+
+        let new_type = new_cell.type;
+        let old_type = old_cell.type;
+
         old_cell.ui.classList.add('cell');
         new_cell.ui.classList.remove('cell')
         old_cell.ui.classList.remove('overboard_cell');
         new_cell.ui.classList.add('overboard_cell');
         old_cell.ui.id = "cell";
         new_cell.ui.id = "overboard_cell";
+
+        let new_rotatedBy = new_cell.rotatedBy;
+        let old_rotatedBy = old_cell.rotatedBy;
+
+        new_cell.ui.classList.remove(`rotate_${new_rotatedBy}`);
+        new_cell.ui.classList.remove(`${new_type}`);
+        old_cell.ui.classList.remove(`rotate_${old_rotatedBy}`);
+        old_cell.ui.classList.remove(`${old_type}`);
+
+        new_cell.ui.classList.add(`rotate_${new_cell.rotatedBy}`);
+        new_cell.ui.classList.add(`${new_cell.type}`);
+        old_cell.ui.classList.add(`rotate_${old_cell.rotatedBy}`);
+        old_cell.ui.classList.add(`${old_cell.type}`);
+        new_cell.ui.style = null;
+        new_cell.position.i = -1;
+        new_cell.position.j = -1;
     }
 }

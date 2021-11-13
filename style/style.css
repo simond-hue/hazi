@@ -23,7 +23,7 @@ body, html{
     margin: 0;
 }
 
-.menu_button, .rotate_button{
+.menu_button, .rotate_button, .new_game_button{
     color: rgb(214, 214, 214);
     background-color: transparent;
     border: 3px solid rgb(214, 214, 214);
@@ -37,15 +37,15 @@ body, html{
     text-align: center;
 }
 
-.menu_button:hover, .rotate_button:hover{
+.menu_button:hover, .rotate_button:hover, .new_game_button:hover{
     background-color: rgb(214, 214, 214);
     color: #111111;
     font-size: 220%;
 }
 
-.rotate_button{
+.rotate_button, .new_game_button{
     width: 100%;
-    height: 50%;
+    height: 20%;
 }
 
 .description p{
@@ -63,7 +63,7 @@ body, html{
     margin: 0;
 }
 
-.input_player_number_subscript, .input_kincskartya_number_subscript, .overboard_subscript{
+.input_player_number_subscript, .input_kincskartya_number_subscript, .overboard_subscript, .treasure-text{
     color: rgb(214, 214, 214);
     font-size: 200%;
     font-family: 'PT Sans', sans-serif;
@@ -129,7 +129,8 @@ body, html{
     width: 100%;
     display: flex;
     align-items: flex-start;
-    justify-content: center;
+    justify-content:flex-start;
+    flex-direction: column;
     margin-top: 1em;
 }
 
@@ -143,6 +144,12 @@ body, html{
     flex-direction: column;
 }
 
+.treasure_text{
+    color: rgb(156, 156, 156);
+    font-family: 'PT Sans', sans-serif;
+    font-size: 150%;
+}
+
 .show_overboard_box{
     height: 20%;
     width: 100%;
@@ -150,6 +157,7 @@ body, html{
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    flex-direction: column;
 }
 
 .overboard_cell {
