@@ -1,8 +1,7 @@
 /*
-    TODO: BUGOS A MOVEMENT UI-OKAT UPDATELNI KELL
-          TURN BASED
-          JÁTÉKOS ADATAINAK KIÍRÁSA
+    TODO: BUGOS MOVEMENT
           ENDCHECK
+          CHEKC LEÍRÁS
 */
 
 class Game{
@@ -18,20 +17,51 @@ class Game{
 
     
     addEventListenerToCells(){
+        let current_overboard = this.overboarded_cell;
+        current_overboard.ui.addEventListener('click', e=>{
+            if(current_overboard.canBeClicked){
+                console.log(current_overboard.rotatedBy,current_overboard.type);
+                this.current_player.movedBoard = false;
+                this.board.movePlayer(this.current_player,current_overboard, e.target);
+                for(let k = 1; k < 8; k++){
+                    for(let l = 1; l < 8; l++){
+                        this.remove_can_move(this.board.board[l][k].ui);
+                        current_overboard.canBeClicked = false;
+                    }
+                }
+                this.switchTurn();
+            }
+        })
         for(let i = 1; i < 8; i++){
             for(let j = 1; j < 8; j++){
                 this.board.board[i][j].ui.addEventListener('click', e=>{
+                    console.log(this.board.board[i][j].rotatedBy,this.board.board[i][j].type);
                     if(this.board.board[i][j].canBeClicked){
-                        this.board.movePlayer(this.current_player,this.board.board[i][j]);
+                        this.current_player.movedBoard = false;
+                        this.board.movePlayer(this.current_player,this.board.board[i][j], e.target);
                         for(let k = 1; k < 8; k++){
                             for(let l = 1; l < 8; l++){
+                                this.remove_can_move(this.board.board[l][k].ui);
                                 this.board.board[l][k].canBeClicked = false;
                             }
                         }
+                        this.switchTurn();
                     }
                 })
             }
         }
+    }
+
+    switchTurn(){
+        this.turn++;
+        this.current_player = this.players[this.turn%this.player_number];
+        let overboard_elems = document.body.querySelectorAll('.show_overboard_box');
+        overboard_elems[0].firstChild.innerText = "A jelenlegi játékos: " + this.current_player.name;
+        overboard_elems[1].firstChild.style.backgroundColor = `rgb(${this.current_player.color.r},${this.current_player.color.g},${this.current_player.color.b})`;
+        let player_can_move = this.board.getDirections(this.current_player);
+        player_can_move.forEach(element => {
+            this.apply_can_move(element.ui);
+        });
     }
 
     initGame(player_number, kincs_number){
@@ -65,7 +95,7 @@ class Game{
                 kincsek.push(treasure);
                 this.board.board[treasue_pos.i][treasue_pos.j].treasure = treasure; 
             }
-            this.players.push(new Player(`${i+1}. játékos`, color, position, this.board.board[position.i][position.j].ui, kincsek));
+            this.players.push(new Player(`${i+1}.`, color, position, this.board.board[position.i][position.j].ui, kincsek));
         }
         this.current_player = this.players[0];
         this.turn = 0;
@@ -82,6 +112,11 @@ class Game{
     
     apply_can_move(ui){
         ui.style.boxShadow = `inset 0px 0px 0px 2px rgb(${this.current_player.color.r},${this.current_player.color.g},${this.current_player.color.b})`
+    }
+
+    remove_can_move(ui){
+        this.overboarded_cell.ui.boxShadow = null;
+        ui.style.boxShadow = null;
     }
 
     initGameField(){
@@ -101,16 +136,18 @@ class Game{
         arrows.forEach(arrow =>{
             arrow.ui.addEventListener('click',(event) =>{
                 if(!this.current_player.movedBoard){
-                    this.current_player.movedBoard = true;
                     arrow.ui.current_arrow = arrow;
                     arrow.ui.overboard_element = this.overboarded_cell;
                     arrow.ui.player = this.current_player;
                     arrow.ui.game = this;
                     this.overboarded_cell = this.board.shift(event);
                     this.updateUI();
+                    this.overboarded_cell.canBeClicked = false;
                     let player_can_move = this.board.getDirections(this.current_player);
+                    console.log(player_can_move, this.overboarded_cell.canBeClicked);
                     player_can_move.forEach(e => {
                         e.canBeClicked = true;
+                        console.log(e.canBeClicked)
                         this.apply_can_move(e.ui);
                     });
                 }
@@ -379,6 +416,7 @@ class Board{
                 }
             }
         }
+        event.target.game.current_player.movedBoard = true;
         if(arrow.direction == 'right'){
             let row = arrow.position.i;      
             new_overboard_element = this.board[row][7];
@@ -393,6 +431,7 @@ class Board{
             }
             Cell.switchParent(new_overboard_element,old_overboard_element);
             Cell.switchUI(new_overboard_element,old_overboard_element);
+            Cell.switchRoation(new_overboard_element,old_overboard_element);
             this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
             this.board[row].splice(1,0,old_overboard_element);
             for(let i = 1; i < 8; i++){
@@ -414,6 +453,8 @@ class Board{
             }
             Cell.switchParent(new_overboard_element,old_overboard_element);
             Cell.switchUI(new_overboard_element,old_overboard_element);
+            Cell.switchRoation(new_overboard_element,old_overboard_element);
+            
             this.board[row].splice(this.board[row].indexOf(new_overboard_element),1);
             this.board[row].splice(7,0,old_overboard_element);
             for(let i = 1; i < 8; i++){
@@ -435,6 +476,8 @@ class Board{
             }
             Cell.switchParent(new_overboard_element,old_overboard_element);
             Cell.switchUI(new_overboard_element,old_overboard_element);
+            Cell.switchRoation(new_overboard_element,old_overboard_element);
+            
             for(let i = 7; i > 0; i--){
                 if(i != 1) this.board[i][column] = this.board[i-1][column];
                 if(i == 1) this.board[i][column] = old_overboard_element;
@@ -456,6 +499,8 @@ class Board{
             }
             Cell.switchParent(new_overboard_element,old_overboard_element);
             Cell.switchUI(new_overboard_element,old_overboard_element);
+            Cell.switchRoation(new_overboard_element,old_overboard_element);
+            
             for(let i = 1; i < 8; i++){
                 if(i != 7) this.board[i][column] = this.board[i+1][column];
                 if(i == 7) this.board[i][column] = old_overboard_element;
@@ -472,12 +517,6 @@ class Board{
         this.ui = document.createElement('div');
         this.ui.id = 'game_main';
         this.ui.classList.add('game_main');
-        for(let i = 1; i < 8; i++){
-            for(let j = 0; j < 8; j++){
-                this.board[i][j].ui.remove();
-                this.board[i][j].updateUI();
-            }
-        }
         this.appendCells()
         this.parent.appendChild(this.ui);
     }
@@ -495,11 +534,12 @@ class Board{
         }
     }
 
-    movePlayer(player, cell){
+    movePlayer(player, cell, target){
+        console.log(cell.position);
         player.position = cell.position;
-        cell.ui.appendChild(player.ui);
+        target.appendChild(player.ui);
         player.ui.remove();
-        player.parent = cell.ui;
+        player.parent = target;
         player.initUI();
         if(cell.treasure && player.kincsek.includes(cell.treasure)){
             player.removeTreasure();
@@ -641,10 +681,8 @@ class Cell{
     rotate90(){
         if(this.rotatedBy == 450) this.rotatedBy = 90
         this.rotatedBy += 90;
-        if(this.rotatedBy != 0){
-            this.ui.classList.remove(`rotate_${(this.rotatedBy - 90) % 360}`)
-            this.ui.classList.add(`rotate_${(this.rotatedBy) % 360}`)
-        }
+        this.ui.classList.remove(`rotate_${(this.rotatedBy - 90) % 360}`)
+        this.ui.classList.add(`rotate_${(this.rotatedBy) % 360}`)
         this.setDoors(this.doors['left'],this.doors['right'],this.doors['down'],this.doors['up']);
     }
 
@@ -657,6 +695,18 @@ class Cell{
         this.rotate90();
         this.rotate90();
         this.rotate90();
+    }
+
+    static switchType(cell1, cell2){
+        let tmp = cell1.type;
+        cell1.type = cell2.type;
+        cell2.type = tmp;
+    }
+
+    static switchRoation(cell1, cell2){
+        let tmp = cell1.rotatedBy;
+        cell1.rotatedBy = cell2.rotatedBy;
+        cell2.rotatedBy = tmp;
     }
 
     static switchParent(cell1, cell2){
